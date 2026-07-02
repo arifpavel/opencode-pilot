@@ -138,7 +138,17 @@ class BrowserSession {
     try {
       const page = await this.ensurePage();
       await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1000);
+      const pageHeight = await page.evaluate(() => document.body.scrollHeight);
+      const viewportHeight = await page.evaluate(() => window.innerHeight);
+      const steps = Math.ceil(pageHeight / viewportHeight);
+      for (let i = 0; i < steps; i++) {
+        await page.evaluate((y) => window.scrollTo(0, y), i * viewportHeight);
+        await page.waitForTimeout(300);
+      }
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(500);
       if (!existsSync(SCREENSHOTS_DIR)) {
         await mkdir(SCREENSHOTS_DIR, { recursive: true });
       }
