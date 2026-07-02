@@ -1,0 +1,19 @@
+{
+  "name": "opencode-pilot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cd packages/mcp-server && npm run build",
+    "test": "node --import tsx --test packages/mcp-server/tests/*.test.ts packages/opencode-plugin/tests/*.test.ts",
+    "test:mcp": "node --import tsx --test packages/mcp-server/tests/*.test.ts",
+    "test:plugin": "node --import tsx --test packages/opencode-plugin/tests/*.test.ts",
+    "typecheck": "cd packages/mcp-server && npx tsc --noEmit && cd ../../packages/opencode-plugin && npx tsc --noEmit",
+    "lint": "npx biome check packages/"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "@biomejs/biome": "^1.9.0",
+    "typescript": "^5.7.0"
+  }
+}

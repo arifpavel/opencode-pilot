@@ -51,33 +51,33 @@ declare module "@opencode-ai/plugin" {
     args: Record<string, unknown>;
     execute: (
       args: Record<string, unknown>,
-      context: { directory: string; worktree: string }
+      context: { directory: string; worktree: string },
     ) => string | Promise<string>;
   }
 
   export interface PluginHooks {
     "experimental.chat.system.transform"?: (
       input: SystemTransformInput,
-      output: SystemTransformOutput
+      output: SystemTransformOutput,
     ) => void | Promise<void>;
     "tool.definition"?: (
       input: ToolDefinitionInput,
-      output: ToolDefinitionOutput
+      output: ToolDefinitionOutput,
     ) => void | Promise<void>;
     "tool.execute.after"?: (
       input: ToolExecuteAfterInput,
-      output: ToolExecuteAfterOutput
+      output: ToolExecuteAfterOutput,
     ) => void | Promise<void>;
     "experimental.session.compacting"?: (
       input: SessionCompactingInput,
-      output: SessionCompactingOutput
+      output: SessionCompactingOutput,
     ) => void | Promise<void>;
     tool?: Record<string, ToolConfig>;
     [key: string]: unknown;
   }
 
   export type Plugin = (
-    ctx: PluginContext
+    ctx: PluginContext,
   ) => PluginHooks | Promise<PluginHooks>;
 
   export function createPlugin(hooks: PluginHooks): Plugin;

@@ -1,9 +1,14 @@
-import { Browser, BrowserContext, Page, chromium } from "playwright";
-import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
-import { logAction, saveSession, loadSession } from "./store.js";
+import { join } from "node:path";
+import {
+  type Browser,
+  type BrowserContext,
+  type Page,
+  chromium,
+} from "playwright";
+import { loadSession, logAction, saveSession } from "./store.js";
 
 const SCREENSHOTS_DIR = join(homedir(), ".opencode-pilot", "screenshots");
 const HEADLESS = process.env.PILOT_HEADLESS === "true";
@@ -25,12 +30,21 @@ class BrowserSession {
   private page: Page | null = null;
   private consoleEntries: ConsoleEntry[] = [];
   private networkEntries: NetworkEntry[] = [];
+  private launchBrowser: () => Promise<Browser>;
+
+  constructor() {
+    this.launchBrowser = () => chromium.launch({ headless: HEADLESS });
+  }
+
+  setBrowserLauncher(launcher: () => Promise<Browser>): void {
+    this.launchBrowser = launcher;
+  }
 
   async ensurePage(): Promise<Page> {
     if (this.page && !this.page.isClosed()) return this.page;
 
     if (!this.browser) {
-      this.browser = await chromium.launch({ headless: HEADLESS });
+      this.browser = await this.launchBrowser();
     }
 
     if (!this.context) {
@@ -42,7 +56,9 @@ class BrowserSession {
     const stored = await loadSession();
     if (stored && stored.cookies.length > 0) {
       await this.context.addCookies(
-        stored.cookies as unknown as Parameters<BrowserContext["addCookies"]>[0]
+        stored.cookies as unknown as Parameters<
+          BrowserContext["addCookies"]
+        >[0],
       );
     }
 
@@ -72,15 +88,20 @@ class BrowserSession {
     return this.page;
   }
 
-  async navigate(url: string): Promise<{ success: boolean; url: string; title: string }> {
+  async navigate(
+    url: string,
+  ): Promise<{ success: boolean; url: string; title: string }> {
     try {
       const page = await this.ensurePage();
-      const response = await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+      const response = await page.goto(url, {
+        waitUntil: "networkidle",
+        timeout: 30000,
+      });
       await page.waitForTimeout(1500);
       const title = await page.title();
       const finalUrl = page.url();
 
-      const cookies = await this.context!.cookies();
+      const cookies = await this.context?.cookies();
       await saveSession({
         cookies: cookies as unknown as Record<string, unknown>[],
         currentUrl: finalUrl,
@@ -88,7 +109,11 @@ class BrowserSession {
         updatedAt: new Date().toISOString(),
       });
 
-      await logAction("navigate", { url: finalUrl, title, status: response?.status() });
+      await logAction("navigate", {
+        url: finalUrl,
+        title,
+        status: response?.status(),
+      });
 
       return { success: true, url: finalUrl, title };
     } catch (error) {
@@ -120,7 +145,10 @@ class BrowserSession {
     }
   }
 
-  async type(selector: string, text: string): Promise<{ success: boolean; action: string }> {
+  async type(
+    selector: string,
+    text: string,
+  ): Promise<{ success: boolean; action: string }> {
     try {
       const page = await this.ensurePage();
       await page.waitForSelector(selector, { timeout: 5000 });
@@ -137,7 +165,9 @@ class BrowserSession {
   async screenshot(name?: string): Promise<{ success: boolean; path: string }> {
     try {
       const page = await this.ensurePage();
-      await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+      await page
+        .waitForLoadState("networkidle", { timeout: 10000 })
+        .catch(() => {});
       await page.waitForTimeout(1000);
       const pageHeight = await page.evaluate(() => document.body.scrollHeight);
       const viewportHeight = await page.evaluate(() => window.innerHeight);
@@ -147,7 +177,9 @@ class BrowserSession {
         await page.waitForTimeout(300);
       }
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+      await page
+        .waitForLoadState("networkidle", { timeout: 10000 })
+        .catch(() => {});
       await page.waitForTimeout(500);
       if (!existsSync(SCREENSHOTS_DIR)) {
         await mkdir(SCREENSHOTS_DIR, { recursive: true });
@@ -156,7 +188,11 @@ class BrowserSession {
         ? `${name.replace(/[^a-zA-Z0-9_-]/g, "_")}.png`
         : `screenshot_${Date.now()}.png`;
       const filepath = join(SCREENSHOTS_DIR, filename);
-      await page.screenshot({ path: filepath, fullPage: true, animations: "disabled" });
+      await page.screenshot({
+        path: filepath,
+        fullPage: true,
+        animations: "disabled",
+      });
       await logAction("screenshot", { path: filepath });
       return { success: true, path: filepath };
     } catch (error) {
@@ -166,7 +202,9 @@ class BrowserSession {
     }
   }
 
-  async extract(selector?: string): Promise<{ success: boolean; content: string }> {
+  async extract(
+    selector?: string,
+  ): Promise<{ success: boolean; content: string }> {
     try {
       const page = await this.ensurePage();
       let content: string;
@@ -196,7 +234,10 @@ class BrowserSession {
     try {
       const errors = this.consoleEntries.map((e) => e.text);
       const count = this.networkEntries.length;
-      await logAction("inspect", { consoleErrors: errors.length, networkRequests: count });
+      await logAction("inspect", {
+        consoleErrors: errors.length,
+        networkRequests: count,
+      });
       return { success: true, consoleErrors: errors, networkRequests: count };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -204,11 +245,14 @@ class BrowserSession {
     }
   }
 
-  async evaluate(script: string): Promise<{ success: boolean; result: string }> {
+  async evaluate(
+    script: string,
+  ): Promise<{ success: boolean; result: string }> {
     try {
       const page = await this.ensurePage();
       const result = await page.evaluate(script);
-      const resultStr = typeof result === "string" ? result : JSON.stringify(result);
+      const resultStr =
+        typeof result === "string" ? result : JSON.stringify(result);
       await logAction("evaluate", { script });
       return { success: true, result: resultStr };
     } catch (error) {

@@ -30,7 +30,7 @@ export function requiresApproval(action: string): boolean {
 
 export function requestApproval(
   action: string,
-  details: string
+  details: string,
 ): Promise<boolean> {
   const id = `approval_${++requestCounter}`;
   const request: ApprovalRequest = {
@@ -77,6 +77,6 @@ export function requestApproval(
 
 export function getPendingApprovals(): ApprovalRequest[] {
   return Array.from(pendingRequests.values()).filter(
-    (r) => r.status === "pending"
+    (r) => r.status === "pending",
   );
 }

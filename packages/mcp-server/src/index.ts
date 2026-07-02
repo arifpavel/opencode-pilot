@@ -15,7 +15,7 @@ const server = new Server(
     capabilities: {
       tools: {},
     },
-  }
+  },
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -33,7 +33,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "pilot_click",
-      description: "Click an element identified by CSS selector or visible text",
+      description:
+        "Click an element identified by CSS selector or visible text",
       inputSchema: {
         type: "object",
         required: ["selector"],
@@ -52,7 +53,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         type: "object",
         required: ["selector", "text"],
         properties: {
-          selector: { type: "string", description: "CSS selector of the input" },
+          selector: {
+            type: "string",
+            description: "CSS selector of the input",
+          },
           text: { type: "string", description: "Text to type" },
         },
       },
@@ -78,7 +82,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           selector: {
             type: "string",
-            description: "Optional CSS selector to extract from a specific element",
+            description:
+              "Optional CSS selector to extract from a specific element",
           },
         },
       },
@@ -174,7 +179,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     return {
-      content: [{ type: "text", text: JSON.stringify({ success: false, error: msg }) }],
+      content: [
+        { type: "text", text: JSON.stringify({ success: false, error: msg }) },
+      ],
       isError: true,
     };
   }

@@ -1,17 +1,17 @@
 import type { Plugin } from "@opencode-ai/plugin";
 import {
+  getPendingApprovals,
+  requestApproval,
+  requiresApproval,
+} from "./approvals.js";
+import {
   createTask,
   getCurrentStep,
-  markStepInProgress,
   markStepComplete,
   markStepFailed,
+  markStepInProgress,
 } from "./task-engine.js";
 import type { Task } from "./task-engine.js";
-import {
-  requiresApproval,
-  requestApproval,
-  getPendingApprovals,
-} from "./approvals.js";
 
 let currentTask: Task | null = null;
 let screenshotCount = 0;
@@ -29,7 +29,7 @@ export const PilotPlugin: Plugin = async (_ctx) => {
         "- High-risk actions (form submission, data deletion, credential use) require user approval.",
       ].join("\n");
 
-      (output as any).system.push(guidance);
+      (output as unknown as { system: string[] }).system.push(guidance);
     },
 
     "tool.execute.after": async (input, output) => {
@@ -82,15 +82,15 @@ export const PilotPlugin: Plugin = async (_ctx) => {
         args: {
           goal: {
             type: "string",
-            description: "The goal or task description for the browser workflow",
+            description:
+              "The goal or task description for the browser workflow",
           },
         },
         execute: (
           args: Record<string, unknown>,
-          _context: { directory: string; worktree: string }
+          _context: { directory: string; worktree: string },
         ): string => {
-          const goal =
-            typeof args.goal === "string" ? args.goal.trim() : "";
+          const goal = typeof args.goal === "string" ? args.goal.trim() : "";
 
           if (!goal) {
             return [
@@ -120,17 +120,15 @@ export const PilotPlugin: Plugin = async (_ctx) => {
 
           for (let i = 0; i < task.steps.length; i++) {
             const step = task.steps[i];
-            const warning = step.requiresApproval
-              ? " [APPROVAL REQUIRED]"
-              : "";
+            const warning = step.requiresApproval ? " [APPROVAL REQUIRED]" : "";
             planLines.push(
-              `  ${i + 1}. ${step.description} (${step.tool})${warning}`
+              `  ${i + 1}. ${step.description} (${step.tool})${warning}`,
             );
           }
 
           planLines.push(
             "",
-            "The AI will execute each step in sequence. Progress will be reported after each step."
+            "The AI will execute each step in sequence. Progress will be reported after each step.",
           );
 
           return planLines.join("\n");
@@ -153,7 +151,7 @@ export const PilotPlugin: Plugin = async (_ctx) => {
         const pending = getCurrentStep(t);
         if (pending) {
           lines.push(
-            `- Current step: ${pending.description} (${pending.tool})`
+            `- Current step: ${pending.description} (${pending.tool})`,
           );
         }
       }

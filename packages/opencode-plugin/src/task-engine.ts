@@ -75,7 +75,11 @@ function decomposeGoal(goal: string): Step[] {
     });
   }
 
-  if (lower.includes("click") || lower.includes("press") || lower.includes("select")) {
+  if (
+    lower.includes("click") ||
+    lower.includes("press") ||
+    lower.includes("select")
+  ) {
     steps.push({
       id: `step_${++taskCounter}`,
       action: "click",
@@ -177,7 +181,7 @@ export function markStepInProgress(task: Task, stepId: string): void {
 export function markStepComplete(
   task: Task,
   stepId: string,
-  result?: string
+  result?: string,
 ): void {
   const step = task.steps.find((s) => s.id === stepId);
   if (step) {
@@ -194,7 +198,7 @@ export function markStepComplete(
 export function markStepFailed(
   task: Task,
   stepId: string,
-  error?: string
+  error?: string,
 ): void {
   const step = task.steps.find((s) => s.id === stepId);
   if (step) {
