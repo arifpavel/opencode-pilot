@@ -4,3 +4,4 @@ dist/
 *.log
 .lavish/
 .DS_Store
+docs/founder-onepager.md
