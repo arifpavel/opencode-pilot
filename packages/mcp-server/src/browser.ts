@@ -76,6 +76,7 @@ class BrowserSession {
     try {
       const page = await this.ensurePage();
       const response = await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+      await page.waitForTimeout(1500);
       const title = await page.title();
       const finalUrl = page.url();
 
@@ -136,6 +137,8 @@ class BrowserSession {
   async screenshot(name?: string): Promise<{ success: boolean; path: string }> {
     try {
       const page = await this.ensurePage();
+      await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(2000);
       if (!existsSync(SCREENSHOTS_DIR)) {
         await mkdir(SCREENSHOTS_DIR, { recursive: true });
       }
@@ -143,7 +146,7 @@ class BrowserSession {
         ? `${name.replace(/[^a-zA-Z0-9_-]/g, "_")}.png`
         : `screenshot_${Date.now()}.png`;
       const filepath = join(SCREENSHOTS_DIR, filename);
-      await page.screenshot({ path: filepath, fullPage: true });
+      await page.screenshot({ path: filepath, fullPage: true, animations: "disabled" });
       await logAction("screenshot", { path: filepath });
       return { success: true, path: filepath };
     } catch (error) {
